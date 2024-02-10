@@ -6,78 +6,39 @@ import pandas as pd
 sys.path.append("assignments/")
 from assignment import *
 from scipy import stats
+from sklearn.svm import SVC
 
 
-class TestAssignment(unittest.TestCase):
+class TestDimensionalityReduction(unittest.TestCase):
     def setUp(self):
-        self.dtypes = {
-            "PassengerId": "int64",
-            "Survived": "int64",
-            "Pclass": "str",
-            "Name": "str",
-            "Sex": "str",
-            "Age": "float64",
-            "SibSp": "int64",
-            "Parch": "int64",
-            "Ticket": "str",
-            "Fare": "float64",
-            "Cabin": "str",
-            "Embarked": "str",
-        }
-        self.data_loader = DataLoader(
-            path="data/train.csv",
-            dtypes=self.dtypes,
-            nominal=["Sex", "Embarked"],
-            ordinal={"Pclass": {"1": 1, "2": 2, "3": 3}},
-            target="Survived",
-            drop=["Name", "Ticket", "Cabin"],
-        )
-        self.Cs = np.logspace(-4, 4, 10)
+        from sklearn.datasets import make_blobs
 
-    def test_data_loader(self):
-        X, y, feature_names = self.data_loader.load()
-        df = pd.read_csv("tests/data.csv")
-        np.testing.assert_array_almost_equal(
-            X.astype(float), df[feature_names].values.astype(float), decimal=2
-        )
-        np.testing.assert_array_almost_equal(
-            y.astype(float), df["target"].values.astype(float), decimal=5
+        self.X, self.y = make_blobs(
+            n_samples=100, centers=3, n_features=3, random_state=42
         )
 
+    def test_pca_fit_transform(self):
+        pca = PrincipalComponentAnalysis(n_components=2)
+        pca.fit(self.X)
+        X_transformed = pca.transform(self.X)
 
-class TestClassificationLassoPath(unittest.TestCase):
-    def setUp(self):
-        self.data_loader = DataLoader(
-            path="data/train.csv",
-            dtypes={
-                "PassengerId": "int64",
-                "Survived": "int64",
-                "Pclass": "str",
-                "Name": "str",
-                "Sex": "str",
-                "Age": "float64",
-                "SibSp": "int64",
-                "Parch": "int64",
-                "Ticket": "str",
-                "Fare": "float64",
-                "Cabin": "str",
-                "Embarked": "str",
-            },
-            nominal=["Sex", "Embarked"],
-            ordinal={"Pclass": {"1": 1, "2": 2, "3": 3}},
-            target="Survived",
-            drop=["Name", "Ticket", "Cabin"],
+        explained_variance = np.trace(np.cov(X_transformed.T)) / np.trace(
+            np.cov(self.X.T)
         )
-        self.X, self.y, self.feature_names = self.data_loader.load()
-        self.Cs = np.logspace(-4, 4, 10)
+        assert (
+            explained_variance > 0.9
+        ), "the explained variance should be greater than 0.9"
+        self.assertEqual(X_transformed.shape, (100, 2))
 
-    def test_classification_lasso_path(self):
-        np.random.seed(0)
-        coefs = classification_lasso_path(self.X, self.y, self.Cs)
-        n_zeros = np.sum(np.abs(coefs) < 1e-3, axis=1).ravel()
+    def test_lda_fit_transform(self):
+        lda = LinearDiscriminantAnalysis(n_components=2)
+        lda.fit(self.X, self.y)
+        X_transformed = lda.transform(self.X)
 
-        corr, _ = stats.spearmanr(n_zeros, self.Cs)
-        assert corr < -0.5
+        model = SVC().fit(X_transformed, self.y)
+        score = model.score(X_transformed, self.y)
+        assert score > 0.9, "the class must be clealry separated"
+        self.assertEqual(X_transformed.shape, (100, 2))
 
 
 if __name__ == "__main__":
