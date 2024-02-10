@@ -1,195 +1,145 @@
 # %%
 import numpy as np
-import pandas as pd
 from typing import Any, Self
-from sklearn.linear_model import LogisticRegression
 
 
-class DataLoader:
-    def __init__(
-        self,
-        path: str,
-        dtypes: dict = None,
-        nominal: list = None,
-        ordinal: dict = None,
-        target: str = None,
-        drop: list = None,
-    ):
-        """
-        DataLoader constructor.
+# TODO: implement the PCA with numpy
+# Note that you are not allowed to use any existing PCA implementation from sklearn or other libraries.
+class PrincipalComponentAnalysis:
+    def __init__(self, n_components: int) -> None:
+        """_summary_
 
         Parameters
         ----------
-        path : str
-            The path to the data file.
-        dtypes : dict, optional
-            The data types for the data, by default None.
-        nominal : list, optional
-            The nominal columns, by default None.
-        ordinal : dict, optional
-            A dictionary where each key-value pair represents a column and its corresponding mapping from data values to numerical ordinal values, by default None.
-        target : str, optional
-            The target column, by default None.
-        drop : list, optional
-            The columns to drop, by default None.
-
-        # Usage example
-        ---------------
-        >> data_types = {
-            "PassengerId": "int64",
-            "Survived": "int64",
-            "Pclass": "str",
-            "Name": "str",
-            "Sex": "str",
-            "Age": "float64",
-            "SibSp": "int64",
-            "Parch": "int64",
-            "Ticket": "str",
-            "Fare": "float64",
-            "Cabin": "str",
-            "Embarked": "str",
-        }
-        >> nominal = ["Sex", "Embarked"]
-        >> ordinal = {"Pclass": {"1": 1, "2": 2, "3": 3}}
-        >> target = "Survived"
-        >> drop = ["Name", "Ticket", "Cabin"]
-        >> data_loader = DataLoader(
-            path="../data/train.csv",
-            dtypes=data_types,
-            nominal=nominal,
-            ordinal=ordinal,
-            target=target,
-            drop=drop,
-        )
-        # Load the data
-        >> X, y = data_loader.load()
+        n_components : int
+            The number of principal components to be computed. This value should be less than or equal to the number of features in the dataset.
         """
-        self.path = path
-        self.dtypes = dtypes
-        self.nominal = nominal
-        self.ordinal = ordinal
-        self.target = target
-        self.drop = drop
+        self.n_components = n_components
+        self.components = None
+        self.mean = None
 
-    def load(self) -> tuple:
+    # TODO: implement the fit method
+    def fit(self, X: np.ndarray) -> Self:
         """
-        Load data from path, preprocess it and return features and target.
-
-        Returns
-        -------
-        tuple
-            A tuple containing features and target.
-        """
-        data_table = pd.read_csv(self.path, dtype=self.dtypes)
-
-        if data_table.isnull().values.any():
-            data_table = self._inpute_missing_values(data_table)
-        if self.nominal is not None:
-            data_table = self._encode_nominal(data_table)
-        if self.ordinal is not None:
-            data_table = self._encode_ordinal(data_table)
-        if self.drop is not None:
-            data_table = self._drop_columns(data_table)
-
-        df = data_table.drop(columns=self.target)
-        X = df.values
-        feature_names = df.columns
-        y = data_table[self.target]
-        return X, y, feature_names
-
-    # TODO: Implement the function
-    def _inpute_missing_values(self, data_table: pd.DataFrame) -> pd.DataFrame:
-        """
-        Inpute missing values by mode for each column.
+        Fit the model with X.
 
         Parameters
         ----------
-        data_table : pd.DataFrame
-            The data table.
+        X : ndarray of shape (n_samples, n_features)
+            Training data, where n_samples is the number of samples
+            and n_features is the number of features.
 
         Returns
         -------
-        pd.DataFrame
-            The data table with missing values imputed.
+        self : object
+            Returns the instance itself.
         """
-        pass
+        self.mean = np.mean(X, axis=0)
+        X = X - self.mean
+        cov = np.cov(X.T)
+        eigenvalues, eigenvectors = np.linalg.eig(cov)
+        eigenvectors = eigenvectors.T
+        idxs = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[idxs]
+        eigenvectors = eigenvectors[idxs]
+        self.components = eigenvectors[0 : self.n_components]
 
-    # TODO: Implement the function
-    def _encode_nominal(self, data_table: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: np.ndarray) -> np.ndarray:
         """
-        Encode nominal columns by one-hot encoding.
+        Apply dimensionality reduction to X.
+
+        X is projected on the first principal components previously extracted from a training set.
 
         Parameters
         ----------
-        data_table : pd.DataFrame
-            The data table.
+        X : ndarray of shape (n_samples, n_features)
+            New data, where n_samples is the number of samples
+            and n_features is the number of features.
 
         Returns
         -------
-        pd.DataFrame
-            The data table with nominal columns encoded.
+        X_new : ndarray of shape (n_samples, n_components)
+            Transformed values.
         """
-        pass
+        X = X - self.mean
+        return np.dot(X, self.components.T)
 
-    # TODO: Implement the function
-    def _encode_ordinal(self, data_table: pd.DataFrame) -> pd.DataFrame:
+
+# TODO: implement the LDA with numpy
+# Note that you are not allowed to use any existing LDA implementation from sklearn or other libraries.
+class LinearDiscriminantAnalysis:
+    def __init__(self, n_components: int) -> None:
+        self.n_components = n_components
+        self.components = None
+        self.mean = None
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -> Self:
         """
-        Encode ordinal columns by mapping.
+        Fit the model according to the given training data.
 
         Parameters
         ----------
-        data_table : pd.DataFrame
-            The data table.
+        X : ndarray of shape (n_samples, n_features)
+            Training data, where n_samples is the number of samples
+            and n_features is the number of features.
+        y : ndarray of shape (n_samples,)
+            Target values.
 
         Returns
         -------
-        pd.DataFrame
-            The data table with ordinal columns encoded.
-        """
-        pass
+        self : object
+            Returns the instance itself.
 
-    # TODO: Implement the function
-    def _drop_columns(self, data_table: pd.DataFrame) -> pd.DataFrame:
+        Hint:
+        -----
+        To implement LDA with numpy, follow these steps:
+        1. Compute the mean vectors for each class.
+        2. Compute the within-class scatter matrix.
+        3. Compute the between-class scatter matrix.
+        4. Compute the eigenvectors and corresponding eigenvalues for the scatter matrices.
+        5. Sort the eigenvectors by decreasing eigenvalues and choose k eigenvectors with the largest eigenvalues to form a d×k dimensional matrix W.
+        6. Use this d×k eigenvector matrix to transform the samples onto the new subspace.
         """
-        Drop columns.
+        n = X.shape[1]
+        class_labels = np.unique(y)
+
+        mean_overall = np.mean(X, axis=0)
+        S_W = np.zeros((n, n))
+        S_B = np.zeros((n, n))
+
+        for c in class_labels:
+            X_c = X[y == c]
+            mean_c = np.mean(X_c, axis=0)
+            S_W += (X_c - mean_c).T.dot((X_c - mean_c))
+
+            n_c = X_c.shape[0]
+            mean_diff = (mean_c - mean_overall).reshape(n, 1)
+            S_B += n_c * (mean_diff).dot(mean_diff.T)
+
+        A = np.linalg.inv(S_W).dot(S_B)
+        eigenvalues, eigenvectors = np.linalg.eig(A)
+        eigenvectors = eigenvectors.T
+        idxs = np.argsort(abs(eigenvalues))[::-1]
+        eigenvalues = eigenvalues[idxs]
+        eigenvectors = eigenvectors[idxs]
+        self.components = eigenvectors[0 : self.n_components]
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        """
+        Apply dimensionality reduction to X.
+
+        X is projected on the first principal components previously extracted from a training set.
 
         Parameters
         ----------
-        data_table : pd.DataFrame
-            The data table.
+        X : ndarray of shape (n_samples, n_features)
+            New data, where n_samples is the number of samples
+            and n_features is the number of features.
 
         Returns
         -------
-        pd.DataFrame
-            The data table with specified columns dropped.
+        X_new : ndarray of shape (n_samples, n_components)
+            Transformed values.
         """
-        pass
-
-
-# TODO: Implement the function
-def classification_lasso_path(X, y, Cs):
-    """
-    Compute Lasso path with Logistic Regression.
-
-    Parameters
-    ----------
-    X : np.ndarray
-        The feature matrix.
-    y : np.ndarray
-        The target vector.
-    Cs : np.ndarray
-        The list of the inverse of regularization parameters.
-
-    Returns
-    -------
-    np.ndarray
-        2D array of shape (len(Cs), n_features) containing the Lasso path.
-        The order of rows corresponds to the order of Cs.
-
-
-    Instruction:
-    ------------
-    # Use the following configuration of the logistic regression
-    >> clf = LogisticRegression(penalty="l1", solver="liblinear", C=C, random_state=42)
-    """
-    pass
+        X = X - self.mean
+        return np.dot(X, self.components.T)

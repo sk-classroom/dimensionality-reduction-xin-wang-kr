@@ -9,4 +9,5 @@ black
 nbconvert
 requests
 jupytext
-shap
+umap-learn
+scikit-learn
