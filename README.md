@@ -35,6 +35,22 @@ git checkout main
 git merge upstream/main
 ```
 
+4. When merging the changes, my code conflicts with the changes from the instructor. How can I resolve the conflicts?
+
+
+To resolve conflicts using the command line options `--theirs` and `--ours` with `git checkout`, follow these steps:
+
+- To keep the changes from the current branch (the one you are merging into), use:
+  ```bash
+  git checkout --ours
+  ```
+- To keep the changes from the branch you are merging from, use:
+  ```bash
+  git checkout --theirs
+  ```
+After resolving the conflicts, don't forget to add the files to staging (`git add .`), and then commit the changes to complete the merge process.
+
+
 ## Git Cheat Sheet
 
 Here's a quick reference to some common Git commands you might find useful:
