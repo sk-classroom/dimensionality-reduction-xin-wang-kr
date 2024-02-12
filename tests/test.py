@@ -30,6 +30,11 @@ class TestDimensionalityReduction(unittest.TestCase):
         ), "the explained variance should be greater than 0.9"
         self.assertEqual(X_transformed.shape, (100, 2))
 
+        assert np.all(
+            X_transformed.mean(axis=0) < 1e-5
+        ), "The projected data must have zero mean. It's likely that you forgot to center the data before projection"
+        self.assertEqual(X_transformed.shape, (100, 2))
+
     def test_lda_fit_transform(self):
         lda = LinearDiscriminantAnalysis(n_components=2)
         lda.fit(self.X, self.y)
@@ -38,6 +43,9 @@ class TestDimensionalityReduction(unittest.TestCase):
         model = SVC().fit(X_transformed, self.y)
         score = model.score(X_transformed, self.y)
         assert score > 0.9, "the class must be clealry separated"
+        assert np.all(
+            X_transformed.mean(axis=0) < 1e-5
+        ), "The projected data must have zero mean. It's likely that you forgot to center the data before projection"
         self.assertEqual(X_transformed.shape, (100, 2))
 
 
